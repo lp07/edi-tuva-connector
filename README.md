@@ -10,7 +10,7 @@ The result is a complete claims pipeline: raw EDI files flow through a Python pa
 
 ## Architecture
 
-Raw EDI 837/835 files, Python parser, Snowflake staging tables, this connector, Tuva input layer, Tuva data marts.
+Raw EDI 837/835 files, Python parser, Snowflake staging tables, this connector, Tuva input layer, Tuva data marts. 
 
 ## Source data
 
