@@ -1,0 +1,138 @@
+[
+  {
+    "claim_id": "CLM000001",
+    "last": "BROWN",
+    "first": "DAVID",
+    "member_id": "MBR23756669",
+    "dob": "19850101",
+    "sex": "M",
+    "payer_name": "BCBS TEXAS",
+    "payer_id": "987654321",
+    "pos": "11",
+    "dos": "20260317",
+    "dx": [
+      "J069"
+    ],
+    "rendering_npi": "1034126396",
+    "lines": [
+      {
+        "proc": "85025",
+        "charge": 35.0,
+        "mod": ""
+      }
+    ],
+    "total": 35.0
+  },
+  {
+    "claim_id": "CLM000002",
+    "last": "BROWN",
+    "first": "ROBERT",
+    "member_id": "MBR39587039",
+    "dob": "19850101",
+    "sex": "F",
+    "payer_name": "BCBS TEXAS",
+    "payer_id": "987654321",
+    "pos": "11",
+    "dos": "20260317",
+    "dx": [
+      "I10"
+    ],
+    "rendering_npi": "1869119330",
+    "lines": [
+      {
+        "proc": "99214",
+        "charge": 200.0,
+        "mod": "59"
+      }
+    ],
+    "total": 200.0
+  },
+  {
+    "claim_id": "CLM000003",
+    "last": "JONES",
+    "first": "DAVID",
+    "member_id": "MBR38898923",
+    "dob": "19850101",
+    "sex": "F",
+    "payer_name": "BCBS TEXAS",
+    "payer_id": "987654321",
+    "pos": "11",
+    "dos": "20260114",
+    "dx": [
+      "Z1100",
+      "J069"
+    ],
+    "rendering_npi": "1103848421",
+    "lines": [
+      {
+        "proc": "85025",
+        "charge": 35.0,
+        "mod": ""
+      }
+    ],
+    "total": 35.0
+  },
+  {
+    "claim_id": "CLM000004",
+    "last": "MILLER",
+    "first": "MARIA",
+    "member_id": "MBR84093639",
+    "dob": "19850101",
+    "sex": "F",
+    "payer_name": "CIGNA",
+    "payer_id": "62308",
+    "pos": "11",
+    "dos": "20260417",
+    "dx": [
+      "K2110"
+    ],
+    "rendering_npi": "1664130526",
+    "lines": [
+      {
+        "proc": "80053",
+        "charge": 45.0,
+        "mod": ""
+      },
+      {
+        "proc": "99213",
+        "charge": 150.0,
+        "mod": ""
+      }
+    ],
+    "total": 195.0
+  },
+  {
+    "claim_id": "CLM000005",
+    "last": "JOHNSON",
+    "first": "ROBERT",
+    "member_id": "MBR47308985",
+    "dob": "19850101",
+    "sex": "F",
+    "payer_name": "CIGNA",
+    "payer_id": "62308",
+    "pos": "11",
+    "dos": "20260323",
+    "dx": [
+      "I10"
+    ],
+    "rendering_npi": "1174648506",
+    "lines": [
+      {
+        "proc": "99214",
+        "charge": 200.0,
+        "mod": "25"
+      },
+      {
+        "proc": "99213",
+        "charge": 150.0,
+        "mod": "59"
+      },
+      {
+        "proc": "93000",
+        "charge": 100.0,
+        "mod": "25"
+      }
+    ],
+    "total": 450.0
+  }
+]
