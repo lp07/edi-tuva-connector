@@ -1,0 +1,325 @@
+[
+  {
+    "st_control_number": "0001",
+    "claim_id": "CLM000001",
+    "total_charge": "35.00",
+    "place_of_service": "11",
+    "facility_code_qualifier": "B",
+    "claim_frequency_code": "1",
+    "billing_provider": {
+      "name": "RIVERBEND MEDICAL GROUP",
+      "npi": "1234567890"
+    },
+    "subscriber": {
+      "payer_responsibility": "P",
+      "group_number": "",
+      "claim_filing_indicator": "CI",
+      "last_name": "BROWN",
+      "first_name": "DAVID",
+      "id_qualifier": "MI",
+      "member_id": "MBR23756669",
+      "dob": "19850101",
+      "gender": "M"
+    },
+    "payer": {
+      "name": "BCBS TEXAS",
+      "id": "987654321"
+    },
+    "diagnoses": [
+      {
+        "sequence": "1",
+        "qualifier": "ABK",
+        "code": "J069"
+      }
+    ],
+    "rendering_provider_npi": "1034126396",
+    "service_lines": [
+      {
+        "line_sequence": "1",
+        "line_number": "1",
+        "procedure_code": "85025",
+        "modifiers": [],
+        "line_charge": "35.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "1"
+        ],
+        "service_date": "20260317",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      }
+    ],
+    "service_date": "20260317-20260317"
+  },
+  {
+    "st_control_number": "0001",
+    "claim_id": "CLM000002",
+    "total_charge": "200.00",
+    "place_of_service": "11",
+    "facility_code_qualifier": "B",
+    "claim_frequency_code": "1",
+    "billing_provider": {
+      "name": "RIVERBEND MEDICAL GROUP",
+      "npi": "1234567890"
+    },
+    "subscriber": {
+      "payer_responsibility": "P",
+      "group_number": "",
+      "claim_filing_indicator": "CI",
+      "last_name": "BROWN",
+      "first_name": "ROBERT",
+      "id_qualifier": "MI",
+      "member_id": "MBR39587039",
+      "dob": "19850101",
+      "gender": "F"
+    },
+    "payer": {
+      "name": "BCBS TEXAS",
+      "id": "987654321"
+    },
+    "diagnoses": [
+      {
+        "sequence": "1",
+        "qualifier": "ABK",
+        "code": "I10"
+      }
+    ],
+    "rendering_provider_npi": "1869119330",
+    "service_lines": [
+      {
+        "line_sequence": "1",
+        "line_number": "1",
+        "procedure_code": "99214",
+        "modifiers": [
+          "59"
+        ],
+        "line_charge": "200.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "1"
+        ],
+        "service_date": "20260317",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      }
+    ],
+    "service_date": "20260317-20260317"
+  },
+  {
+    "st_control_number": "0001",
+    "claim_id": "CLM000003",
+    "total_charge": "35.00",
+    "place_of_service": "11",
+    "facility_code_qualifier": "B",
+    "claim_frequency_code": "1",
+    "billing_provider": {
+      "name": "RIVERBEND MEDICAL GROUP",
+      "npi": "1234567890"
+    },
+    "subscriber": {
+      "payer_responsibility": "P",
+      "group_number": "",
+      "claim_filing_indicator": "CI",
+      "last_name": "JONES",
+      "first_name": "DAVID",
+      "id_qualifier": "MI",
+      "member_id": "MBR38898923",
+      "dob": "19850101",
+      "gender": "F"
+    },
+    "payer": {
+      "name": "BCBS TEXAS",
+      "id": "987654321"
+    },
+    "diagnoses": [
+      {
+        "sequence": "1",
+        "qualifier": "ABK",
+        "code": "Z1100"
+      },
+      {
+        "sequence": "2",
+        "qualifier": "ABF",
+        "code": "J069"
+      }
+    ],
+    "rendering_provider_npi": "1103848421",
+    "service_lines": [
+      {
+        "line_sequence": "1",
+        "line_number": "1",
+        "procedure_code": "85025",
+        "modifiers": [],
+        "line_charge": "35.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "1"
+        ],
+        "service_date": "20260114",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      }
+    ],
+    "service_date": "20260114-20260114"
+  },
+  {
+    "st_control_number": "0001",
+    "claim_id": "CLM000004",
+    "total_charge": "195.00",
+    "place_of_service": "11",
+    "facility_code_qualifier": "B",
+    "claim_frequency_code": "1",
+    "billing_provider": {
+      "name": "RIVERBEND MEDICAL GROUP",
+      "npi": "1234567890"
+    },
+    "subscriber": {
+      "payer_responsibility": "P",
+      "group_number": "",
+      "claim_filing_indicator": "CI",
+      "last_name": "MILLER",
+      "first_name": "MARIA",
+      "id_qualifier": "MI",
+      "member_id": "MBR84093639",
+      "dob": "19850101",
+      "gender": "F"
+    },
+    "payer": {
+      "name": "CIGNA",
+      "id": "62308"
+    },
+    "diagnoses": [
+      {
+        "sequence": "1",
+        "qualifier": "ABK",
+        "code": "K2110"
+      }
+    ],
+    "rendering_provider_npi": "1664130526",
+    "service_lines": [
+      {
+        "line_sequence": "1",
+        "line_number": "1",
+        "procedure_code": "80053",
+        "modifiers": [],
+        "line_charge": "45.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "1"
+        ],
+        "service_date": "20260417",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      },
+      {
+        "line_sequence": "2",
+        "line_number": "2",
+        "procedure_code": "99213",
+        "modifiers": [],
+        "line_charge": "150.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "2"
+        ],
+        "service_date": "20260417",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      }
+    ],
+    "service_date": "20260417-20260417"
+  },
+  {
+    "st_control_number": "0001",
+    "claim_id": "CLM000005",
+    "total_charge": "450.00",
+    "place_of_service": "11",
+    "facility_code_qualifier": "B",
+    "claim_frequency_code": "1",
+    "billing_provider": {
+      "name": "RIVERBEND MEDICAL GROUP",
+      "npi": "1234567890"
+    },
+    "subscriber": {
+      "payer_responsibility": "P",
+      "group_number": "",
+      "claim_filing_indicator": "CI",
+      "last_name": "JOHNSON",
+      "first_name": "ROBERT",
+      "id_qualifier": "MI",
+      "member_id": "MBR47308985",
+      "dob": "19850101",
+      "gender": "F"
+    },
+    "payer": {
+      "name": "CIGNA",
+      "id": "62308"
+    },
+    "diagnoses": [
+      {
+        "sequence": "1",
+        "qualifier": "ABK",
+        "code": "I10"
+      }
+    ],
+    "rendering_provider_npi": "1174648506",
+    "service_lines": [
+      {
+        "line_sequence": "1",
+        "line_number": "1",
+        "procedure_code": "99214",
+        "modifiers": [
+          "25"
+        ],
+        "line_charge": "200.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "1"
+        ],
+        "service_date": "20260323",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      },
+      {
+        "line_sequence": "2",
+        "line_number": "2",
+        "procedure_code": "99213",
+        "modifiers": [
+          "59"
+        ],
+        "line_charge": "150.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "2"
+        ],
+        "service_date": "20260323",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      },
+      {
+        "line_sequence": "3",
+        "line_number": "3",
+        "procedure_code": "93000",
+        "modifiers": [
+          "25"
+        ],
+        "line_charge": "100.00",
+        "unit_type": "UN",
+        "units": "1",
+        "diagnosis_pointers": [
+          "3"
+        ],
+        "service_date": "20260323",
+        "rendering_provider_npi": "",
+        "line_control_number": ""
+      }
+    ],
+    "service_date": "20260323-20260323"
+  }
+]

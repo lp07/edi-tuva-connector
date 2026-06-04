@@ -1,58 +1,29 @@
 version: 2
 
 sources:
-  - name: edi_raw
-    schema: main_edi_raw
-    description: Parsed EDI 837 and 835 data produced by the upstream Python reconciliation pipeline.
+  - name: edi_parsed
+    description: >
+      Parsed EDI output produced by edi_parser.py. Each file is at NATIVE grain
+      (one row per claim) with nested arrays. Read directly from disk as JSON via
+      dbt-duckdb external_location. The {name} token resolves to the table name,
+      so claims_837 reads claims_837.json and remit_835 reads remit_835.json.
+    meta:
+      external_location: "read_json_auto('sample_data/parsed/{name}.json')"
     tables:
-      - name: reconciliation_report
+      - name: claims_837
         description: >
-          Combined claim and remittance data output from the EDI 837/835 reconciliation engine.
-          Each row represents one claim with payment and adjustment details from the matched 835 remittance.
-        columns:
-          - name: claim_id
-            description: Unique claim identifier from the 837 CLM01 segment.
-          - name: patient_id
-            description: Patient identifier.
-          - name: payer
-            description: Payer name from the 835 remittance.
-          - name: procedure_code
-            description: CPT or HCPCS procedure code from the 837 SV1 segment.
-          - name: date_of_service
-            description: Date of service from the 837 DTP segment with qualifier 472.
-          - name: date_submitted
-            description: Date the claim was submitted to the payer.
-          - name: billed_amount
-            description: Total charge amount from the 837 CLM02 segment.
-          - name: allowed_amount
-            description: Contractually allowed amount from the 835 AMT segment with qualifier B6.
-          - name: paid_amount
-            description: Amount paid by the payer from the 835 CLP04 element.
-          - name: patient_responsibility
-            description: Patient responsibility amount from the 835 CAS segments with group code PR.
-          - name: contractual_adjustment
-            description: Contractual write-off amount from the 835 CAS segments with group code CO.
-          - name: remittance_date
-            description: Date the remittance was issued from the 835 DTM segment with qualifier 405.
-          - name: days_to_payment
-            description: Calculated field representing days between date submitted and remittance date.
-          - name: status
-            description: Reconciliation status assigned by the matching engine. Values include matched, underpayment, denial, reversal, orphaned_remit, orphaned_claim.
-          - name: denial_category
-            description: Denial classification assigned by the classifier module.
-          - name: carc_codes
-            description: Claim adjustment reason codes from the 835 CAS02 element.
-          - name: rarc_codes
-            description: Remittance advice remark codes from the 835 LQ segment.
-          - name: primary_carc
-            description: The primary claim adjustment reason code driving the payment variance.
-          - name: contracted_rate
-            description: Expected payment amount based on payer contract configuration.
-          - name: variance_amount
-            description: Difference between paid amount and contracted rate.
-          - name: variance_pct
-            description: Variance expressed as a percentage of the contracted rate.
-          - name: recovery_amount
-            description: Amount identified as recoverable through appeal or correction.
-          - name: check_number
-            description: Payer check or EFT reference number from the 835 TRN02 element.
+          837P professional claims. One row per claim. Nested service_lines[]
+          (one element per service line, in submitted order) and diagnoses[]
+          (claim-level, ordered; the ordinal is what SV1-07 line pointers
+          reference). Money and quantities are raw strings; staging casts them.
+          Assumptions: 837P only, place of service 11, subscriber equals patient,
+          no per-line REF*6R (line_control_number is empty), so line alignment to
+          the 835 is positional on claim_id plus line_sequence.
+      - name: remit_835
+        description: >
+          835 remittance. One row per claim payment. Nested service_lines[] (each
+          with line_adjustments[] CAS triplets and remark_codes[]) and
+          claim_level_adjustments[] CAS triplets. Join key to the 837 is claim_id
+          (CLP01 equals CLM01). line_sequence is parser-assigned position within
+          the claim. claim_level_adjustments may be empty in synthetic data but is
+          populated by real remittances.
