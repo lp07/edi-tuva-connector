@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: medical_claim
+    description: >
+      Final adjudicated professional claim lines mapped to the Tuva input layer
+      medical_claim contract (148 columns). One row per claim line. Primary key
+      is claim_id, claim_line_number, data_source.
+    columns:
+      - name: claim_id
+        tests: [not_null]
+      - name: claim_line_number
+        tests: [not_null]
+      - name: data_source
+        tests: [not_null]
+      - name: claim_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['professional', 'institutional', 'undetermined']
+      - name: person_id
+        tests: [not_null]
+      - name: member_id
+        tests: [not_null]
+      - name: payer
+        tests: [not_null]
+      - name: place_of_service_code
+        tests: [not_null]
+      - name: hcpcs_code
+        tests: [not_null]
+      - name: charge_amount
+        tests: [not_null]
+      - name: paid_amount
+        tests: [not_null]
+      - name: claim_start_date
+        tests: [not_null]
+      - name: claim_end_date
+        tests: [not_null]
+      - name: billing_npi
+        tests: [not_null]
+      - name: diagnosis_code_1
+        tests: [not_null]
+      - name: diagnosis_code_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['icd-10-cm', 'icd-9-cm']

@@ -18,9 +18,14 @@ models:
   edi_tuva_connector:
     staging:
       +materialized: view
+    intermediate:
+      +materialized: view
     input_layer:
       +materialized: table
 
 seeds:
   edi_tuva_connector:
     +schema: main_edi_raw
+
+vars:
+  claims_enabled: true
