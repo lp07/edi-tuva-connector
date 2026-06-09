@@ -1,35 +1,16 @@
--- stg_835_claim_line
--- Grain: one row per 835 service line (SVC loop).
--- Flattens the claim payment's own service_lines[] array. line_sequence is the
--- parser-assigned position within the claim and is the positional join key to
--- stg_837_claim_line. remark_codes stays a typed varchar list (empty in
--- synthetic data; populated by real remittances with LQ*HE segments).
-
-with source as (
-
-    select claim_id, service_lines
-    from {{ source('edi_parsed', 'remit_835') }}
-
-),
-
-flattened as (
-
-    select
-        claim_id,
-        unnest(service_lines) as line
-    from source
-
+-- stg_835_claim_line | grain: one row per 835 service line. Typed select only.
+with flattened as (
+    {{ edi_flatten('service_lines', 'line', source_name='remit_835') }}
 )
-
 select
-    cast(claim_id as varchar)                          as claim_id,
-    try_cast(line.line_sequence as integer)                as line_sequence,
-    cast(line.procedure_code as varchar)               as procedure_code,
-    cast(line.modifiers as varchar[])                  as modifiers,
-    try_cast(line.line_charge as decimal(18, 2))           as line_charge_amount,
-    try_cast(line.line_paid as decimal(18, 2))             as line_paid_amount,
-    try_cast(line.units_paid as decimal(12, 3))            as paid_unit_count,
-    try_strptime(line.service_date, '%Y%m%d')::date    as service_date,
-    cast(line.line_control_number as varchar)          as line_control_number,
-    cast(line.remark_codes as varchar[])               as remark_codes
+    {{ edi_get('', 'claim_id') }}                          as claim_id,
+    {{ edi_get('line', 'line_sequence', 'integer') }}      as line_sequence,
+    {{ edi_get('line', 'procedure_code') }}                as procedure_code,
+    {{ edi_get('line', 'modifiers', 'array') }}            as modifiers,
+    {{ edi_get('line', 'line_charge', 'decimal(18,2)') }}  as line_charge_amount,
+    {{ edi_get('line', 'line_paid', 'decimal(18,2)') }}    as line_paid_amount,
+    {{ edi_get('line', 'units_paid', 'decimal(12,3)') }}   as paid_unit_count,
+    {{ edi_get('line', 'service_date', 'date') }}          as service_date,
+    {{ edi_get('line', 'line_control_number') }}           as line_control_number,
+    {{ edi_get('line', 'remark_codes', 'array') }}         as remark_codes
 from flattened

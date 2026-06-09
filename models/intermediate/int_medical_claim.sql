@@ -1,46 +1,26 @@
--- int_medical_claim
--- Grain: one row per final-adjudicated 837P claim line.
--- This model owns the cross-source work:
---   - positional join of 837 line to 835 line on (claim_id, line_sequence)
---   - header dates derived as min/max of line service dates
---   - person_id mapped from member_id (1:1; replace with an MPI cross-walk if one
---     is ever available, since person_id is meant to be a stable person key)
---   - allowed_amount built per Tuva's definition: paid + deductible + coinsurance
---     + copayment
---   - denial and reversal classification: denials (claim_status_code = 4) are
---     final adjudicated lines and are kept with their paid amount (typically 0);
---     reversals (claim_status_code = 22) are dropped so only final adjudicated
---     activity reaches the input layer. Voids and replacements would be handled
---     in this same filter when present.
--- Column names already match Tuva where a value is populated. input_layer
--- reshapes to the full 148-column contract.
-
+-- int_medical_claim | grain: one row per final-adjudicated 837P claim line.
+-- Cross-source positional join (claim_id + line_sequence), header dates,
+-- person_id from member_id, allowed_amount, denial/reversal handling. The only
+-- adapter-specific piece is array element access, via the edi_array_element macro.
 with line_837 as (
     select * from {{ ref('stg_837_claim_line') }}
 ),
-
 claim_837 as (
     select * from {{ ref('stg_837_claim') }}
 ),
-
 line_835 as (
     select * from {{ ref('stg_835_claim_line') }}
 ),
-
 claim_835 as (
     select * from {{ ref('stg_835_claim') }}
 ),
-
 financials as (
     select * from {{ ref('int_835_line_financials') }}
 ),
-
 diagnoses as (
     select * from {{ ref('int_837_diagnosis_pivot') }}
 ),
-
 joined as (
-
     select
         l8.claim_id,
         l8.line_sequence                                       as claim_line_number,
@@ -55,10 +35,10 @@ joined as (
         nullif(c8.place_of_service_code, '')                   as place_of_service_code,
         l8.unit_count                                          as service_unit_quantity,
         nullif(l8.procedure_code, '')                          as hcpcs_code,
-        l8.modifiers[1]                                        as hcpcs_modifier_1,
-        l8.modifiers[2]                                        as hcpcs_modifier_2,
-        l8.modifiers[3]                                        as hcpcs_modifier_3,
-        l8.modifiers[4]                                        as hcpcs_modifier_4,
+        {{ edi_array_element('l8.modifiers', 1) }}             as hcpcs_modifier_1,
+        {{ edi_array_element('l8.modifiers', 2) }}             as hcpcs_modifier_2,
+        {{ edi_array_element('l8.modifiers', 3) }}             as hcpcs_modifier_3,
+        {{ edi_array_element('l8.modifiers', 4) }}             as hcpcs_modifier_4,
         coalesce(nullif(l8.line_rendering_provider_npi, ''),
                  nullif(c8.claim_rendering_provider_npi, ''))  as rendering_npi,
         nullif(c8.billing_provider_npi, '')                    as billing_npi,
@@ -91,9 +71,7 @@ joined as (
         and l8.line_sequence = fin.line_sequence
     left join diagnoses dx
         on l8.claim_id = dx.claim_id
-
 )
-
 select *
 from joined
 where coalesce(claim_status_code, '') not in ('22')

@@ -3,27 +3,15 @@ version: 2
 sources:
   - name: edi_parsed
     description: >
-      Parsed EDI output produced by edi_parser.py. Each file is at NATIVE grain
-      (one row per claim) with nested arrays. Read directly from disk as JSON via
-      dbt-duckdb external_location. The {name} token resolves to the table name,
-      so claims_837 reads claims_837.json and remit_835 reads remit_835.json.
+      Parsed EDI output from edi_parser.py, one row per claim with nested arrays.
+      DuckDB reads the JSON files directly via external_location (read_json_auto).
+      Snowflake reads raw tables, each a single VARIANT column named `record`,
+      loaded by the load script into the database and schema set by the vars
+      below (raw schema defaults to edi_raw).
+    database: "{{ var('snowflake_database', none) }}"
+    schema: "{{ var('snowflake_raw_schema', 'edi_raw') }}"
     meta:
       external_location: "read_json_auto('sample_data/parsed/{name}.json')"
     tables:
       - name: claims_837
-        description: >
-          837P professional claims. One row per claim. Nested service_lines[]
-          (one element per service line, in submitted order) and diagnoses[]
-          (claim-level, ordered; the ordinal is what SV1-07 line pointers
-          reference). Money and quantities are raw strings; staging casts them.
-          Assumptions: 837P only, place of service 11, subscriber equals patient,
-          no per-line REF*6R (line_control_number is empty), so line alignment to
-          the 835 is positional on claim_id plus line_sequence.
       - name: remit_835
-        description: >
-          835 remittance. One row per claim payment. Nested service_lines[] (each
-          with line_adjustments[] CAS triplets and remark_codes[]) and
-          claim_level_adjustments[] CAS triplets. Join key to the 837 is claim_id
-          (CLP01 equals CLM01). line_sequence is parser-assigned position within
-          the claim. claim_level_adjustments may be empty in synthetic data but is
-          populated by real remittances.

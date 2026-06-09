@@ -1,34 +1,14 @@
--- stg_835_claim_adjustment
--- Grain: one row per claim-level CAS adjustment triplet.
--- Empty in the current synthetic data, modeled now because real remittances
--- carry claim-level adjustments. The list type is pinned with an explicit struct
--- cast so the model compiles and returns zero rows rather than failing type
--- inference when every claim_level_adjustments array is empty.
-
-with source as (
-
-    select claim_id, claim_level_adjustments
-    from {{ source('edi_parsed', 'remit_835') }}
-
-),
-
-adjustments as (
-
-    select
-        claim_id,
-        unnest(
-            cast(claim_level_adjustments as
-                struct(group_code varchar, reason_code varchar,
-                       amount varchar, quantity varchar)[])
-        ) as adj
-    from source
-
+-- stg_835_claim_adjustment | grain: one row per claim-level CAS triplet.
+-- Empty in synthetic data; element_struct pins the type so empty arrays do not
+-- break inference. Typed select only.
+with adjustments as (
+    {{ edi_flatten('claim_level_adjustments', 'adj', source_name='remit_835',
+                   element_struct='group_code varchar, reason_code varchar, amount varchar, quantity varchar') }}
 )
-
 select
-    cast(claim_id as varchar)            as claim_id,
-    cast(adj.group_code as varchar)      as adjustment_group_code,
-    cast(adj.reason_code as varchar)     as adjustment_reason_code,
-    try_cast(adj.amount as decimal(18, 2))   as adjustment_amount,
-    try_cast(adj.quantity as decimal(12, 3)) as adjustment_quantity
+    {{ edi_get('', 'claim_id') }}                      as claim_id,
+    {{ edi_get('adj', 'group_code') }}                 as adjustment_group_code,
+    {{ edi_get('adj', 'reason_code') }}                as adjustment_reason_code,
+    {{ edi_get('adj', 'amount', 'decimal(18,2)') }}    as adjustment_amount,
+    {{ edi_get('adj', 'quantity', 'decimal(12,3)') }}  as adjustment_quantity
 from adjustments
