@@ -3,7 +3,8 @@
 A dbt connector that transforms raw X12 **837P** (professional claims) and **835**
 (remittance) EDI into the [Tuva Project](https://thetuvaproject.com) input layer,
 landing a `medical_claim` model that conforms column-for-column to Tuva's live
-148-column contract and passes Tuva's built-in data-quality tests.
+148-column contract and passes Tuva's built-in data-quality tests. The same dbt
+project runs on **both DuckDB and Snowflake** through a small adapter layer.
 
 Raw EDI in, a faithful parser turns it into JSON, dbt types it, joins it, applies
 claims logic, and lands it as a contract-conforming model, validated by both
@@ -40,6 +41,10 @@ flowchart LR
 4. **Intermediate** does the cross-source claims logic.
 5. **Input layer** maps to Tuva's `medical_claim` contract.
 
+The staging, intermediate, and input layers are warehouse-agnostic. The only
+warehouse-specific code lives in three macros and the source definition; see
+[Warehouse support](#warehouse-support).
+
 ---
 
 ## Repository layout
@@ -58,9 +63,11 @@ edi-tuva-connector/
 │   └── parsed/                   # parser output read by dbt
 │       ├── claims_837.json
 │       └── remit_835.json
+├── macros/
+│   └── edi_adapter.sql           # all DuckDB vs Snowflake branching (3 macros)
 ├── models/
 │   ├── staging/                  # typed select only, one source per natural grain
-│   │   ├── sources.yml           # parsed JSON declared as external sources
+│   │   ├── sources.yml           # parsed JSON as external sources (both warehouses)
 │   │   ├── stg_837_claim.sql
 │   │   ├── stg_837_claim_line.sql
 │   │   ├── stg_837_diagnosis.sql
@@ -84,6 +91,10 @@ edi-tuva-connector/
 │   ├── assert_medical_claim_grain.sql
 │   ├── assert_medical_claim_amounts_sane.sql
 │   └── fixtures/make_fixtures.py # conformant 837P/835 fixture for parser testing
+├── snowflake/
+│   ├── setup.sql                 # create database, schemas, warehouse
+│   ├── load_raw.sql              # load parsed JSON into raw VARIANT tables
+│   └── profiles_dual_target.example.yml
 ├── dbt_project.yml
 └── packages.yml                  # the_tuva_project 0.18.x
 ```
@@ -111,30 +122,30 @@ claim does not carry.
 
 ---
 
-## Design decisions
+## Warehouse support
 
-- **Source-faithful parser.** The parser does zero type coercion (every value is
-  the raw string, money included) and reads its delimiters from the ISA segment
-  rather than hardcoding them. Typing and logic live in dbt. This keeps parser
-  bugs and logic bugs separable.
-- **Two outputs, not one pre-joined row.** The parser emits the 837 and 835 at
-  native grain so dbt owns the join, the grain, and the logic.
-- **Positional line join.** The source writes no per-line `REF*6R` line control
-  number, so 837 and 835 lines are aligned by position within the claim
-  (`line_sequence`). A test (`assert_positional_alignment`) guards that the
-  procedure codes match at every aligned position.
-- **Contract matched from the repo, not memory.** The 148-column list and order
-  were pulled directly from the Tuva repo, because the contract changes between
-  versions.
-- **Adjudication rules.** Reversals (835 status 22) are dropped so only final
-  adjudicated activity lands; denials (status 4) are kept with their paid amount.
-  `person_id` is mapped 1:1 from `member_id` until a master patient index exists.
-  `allowed_amount` follows Tuva's definition: paid plus deductible, coinsurance,
-  and copayment.
+The connector runs on DuckDB (free, local, the default) and on Snowflake, from
+the same models. All warehouse-specific SQL is contained in three macros in
+`macros/edi_adapter.sql` plus the source definition in `sources.yml`. The model
+bodies contain only macro calls, never `{% if target.type %}` branches.
+
+| Concern | DuckDB | Snowflake |
+| --- | --- | --- |
+| Read parsed JSON | `read_json_auto` via `external_location` | raw `VARIANT` tables loaded from a stage |
+| Field access | typed struct / dotted path | `:` path on the `record` VARIANT |
+| Flatten arrays | `unnest` | `LATERAL FLATTEN` |
+| Parse `YYYYMMDD` | `try_strptime` | `try_to_date` |
+| Numeric cast | `try_cast` | `try_to_decimal` |
+| Array element | 1-based index | 0-based index |
+
+DuckDB is the default target, so day-to-day development stays free and offline.
+The refactor that introduced the adapter macros was verified non-regressive: the
+DuckDB model output and the full test suite were confirmed unchanged afterward
+(the full DQI suite still passing).
 
 ---
 
-## Quickstart
+## Quickstart (DuckDB)
 
 Requires Python 3.11 and `dbt-duckdb` 1.10.x.
 
@@ -156,6 +167,65 @@ dbt run --select +medical_claim
 
 ---
 
+## Running on Snowflake
+
+Requires `dbt-snowflake`. Authentication uses an RSA key pair, which also
+satisfies Snowflake's MFA requirement for programmatic access.
+
+```bash
+# 1. create database, schemas, and warehouse (run snowflake/setup.sql in Snowsight)
+
+# 2. load the parsed JSON into raw VARIANT tables (snowflake/load_raw.sql)
+
+# 3. point dbt at Snowflake (see snowflake/profiles_dual_target.example.yml),
+#    then set the connection env vars in your shell:
+export SNOWFLAKE_ACCOUNT="orgname-accountname"
+export SNOWFLAKE_USER="your_user"
+export SNOWFLAKE_PRIVATE_KEY_PATH="$HOME/.dbt/snowflake_rsa_key.p8"
+export SNOWFLAKE_ROLE="ACCOUNTADMIN"
+export SNOWFLAKE_WAREHOUSE="COMPUTE_WH"
+export SNOWFLAKE_DATABASE="EDI"
+export SNOWFLAKE_SCHEMA="edi_tuva"
+
+# 4. build and test on Snowflake
+dbt run  --target snowflake --select +medical_claim eligibility pharmacy_claim
+dbt test --target snowflake --select +medical_claim --exclude check_medical_claim_eligibility_overlap check_plan_overlap
+```
+
+The source resolves to `<SNOWFLAKE_DATABASE>.edi_raw.{claims_837, remit_835}`.
+Override the raw schema with the `snowflake_raw_schema` var (defaults to
+`edi_raw`) and the database with `snowflake_database` (defaults to the profile's
+database).
+
+---
+
+## Design decisions
+
+- **Source-faithful parser.** The parser does zero type coercion (every value is
+  the raw string, money included) and reads its delimiters from the ISA segment
+  rather than hardcoding them. Typing and logic live in dbt. This keeps parser
+  bugs and logic bugs separable.
+- **Two outputs, not one pre-joined row.** The parser emits the 837 and 835 at
+  native grain so dbt owns the join, the grain, and the logic.
+- **Positional line join.** The source writes no per-line `REF*6R` line control
+  number, so 837 and 835 lines are aligned by position within the claim
+  (`line_sequence`). A test (`assert_positional_alignment`) guards that the
+  procedure codes match at every aligned position.
+- **Branching contained to the adapter.** Supporting two warehouses without
+  forking the models: all DuckDB vs Snowflake differences live in three macros
+  and `sources.yml`. The model bodies are warehouse-agnostic, and the DuckDB
+  output was proven unchanged after the macros were introduced.
+- **Contract matched from the repo, not memory.** The 148-column list and order
+  were pulled directly from the Tuva repo, because the contract changes between
+  versions.
+- **Adjudication rules.** Reversals (835 status 22) are dropped so only final
+  adjudicated activity lands; denials (status 4) are kept with their paid amount.
+  `person_id` is mapped 1:1 from `member_id` until a master patient index exists.
+  `allowed_amount` follows Tuva's definition: paid plus deductible, coinsurance,
+  and copayment.
+
+---
+
 ## Testing
 
 Two suites run against the connector.
@@ -169,23 +239,34 @@ accepted_values):
 - `assert_medical_claim_grain` — primary key uniqueness (`claim_id`, `claim_line_number`, `data_source`)
 - `assert_medical_claim_amounts_sane` — allowed not below paid, paid not above charge, no negatives
 
-**The Tuva package input-layer DQI suite** runs against `medical_claim`. It needs
-the package seeds loaded first, and the relationship tests reference two
-terminology models:
+**The Tuva package input-layer DQI suite** runs against `medical_claim`. From a
+clean clone it needs the package seeds loaded, the input layer and both zero-row
+stubs built (a cross-claim check joins them), and the two terminology models the
+relationship tests reference:
 
 ```bash
 dbt seed
-dbt run  --select terminology__present_on_admission terminology__discharge_disposition
-dbt test --select input_layer__medical_claim --exclude check_medical_claim_eligibility_overlap
+dbt run  --select +input_layer__medical_claim eligibility pharmacy_claim terminology__present_on_admission terminology__discharge_disposition
+dbt test --select input_layer__medical_claim --exclude check_medical_claim_eligibility_overlap check_plan_overlap
 ```
 
-The `--exclude` drops a cross-table enrollment-overlap check that does not apply
-to a claims-only connector with a stubbed eligibility model.
+The two excluded checks (`check_medical_claim_eligibility_overlap` and
+`check_plan_overlap`) are cross-claim tests that join `medical_claim` with the
+`eligibility` and `pharmacy_claim` models on enrollment and plan. They do not
+apply to a claims-only connector whose eligibility and pharmacy models are empty
+stubs, so they are excluded. The two stubs are still built (as shown) so the rest
+of the suite resolves.
 
-**Current result:** 296 Tuva DQI tests pass, the project's own tests pass, and the
-only warnings are `warn_if_null_percentage_is_100` on columns intentionally left
-null for a professional 837P source (plan, paid_date, facility_npi, the TINs,
-in_network_flag, file_name).
+**Results:**
+
+- **DuckDB:** 295 Tuva DQI tests pass and all of the project's own tests pass.
+  The only warnings are `warn_if_null_percentage_is_100` on columns intentionally
+  left null for a professional 837P source (plan, paid_date, facility_npi, the
+  TINs, in_network_flag, file_name).
+- **Snowflake:** the connector builds end to end and all of the project's own
+  tests pass, through key-pair auth. The full Tuva DQI suite has been validated
+  on DuckDB; running it on Snowflake additionally requires loading the package
+  seeds into Snowflake.
 
 ---
 
@@ -202,12 +283,12 @@ in_network_flag, file_name).
 
 ## Tech stack
 
-Python (standard library parser), dbt, dbt-duckdb, DuckDB, the_tuva_project 0.18.
+Python (standard-library parser), dbt, dbt-duckdb and dbt-snowflake, DuckDB,
+Snowflake, the_tuva_project 0.18.
 
 ## Roadmap
 
-- Migrate the warehouse from DuckDB to Snowflake (JSON read to stage plus VARIANT,
-  `unnest` to `LATERAL FLATTEN`, `try_strptime` to `TRY_TO_DATE`, 0-based array
-  indexing).
+- Run the full Tuva DQI suite on Snowflake (load the package seeds into Snowflake).
 - Capture `paid_date` (835 BPR production date) and `file_name` to reduce the
   null-percentage warnings.
+- Extend beyond 837P to institutional 837I claims.
